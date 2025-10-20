@@ -1,6 +1,6 @@
-import os
 import zlib
 from datetime import datetime
+from pathlib import Path
 
 from loguru import logger
 
@@ -9,7 +9,8 @@ def calculate_crc32(file_path):
     """Calculate CRC32 checksum for a file"""
     try:
         prev = 0
-        with open(file_path, "rb") as f:
+        path = Path(file_path)
+        with path.open("rb") as f:
             for line in f:
                 prev = zlib.crc32(line, prev)
         return f"{prev & 0xFFFFFFFF:08X}"
@@ -21,7 +22,8 @@ def calculate_crc32(file_path):
 def get_file_size(file_path):
     """Get file size"""
     try:
-        size_bytes = os.path.getsize(file_path)
+        path = Path(file_path)
+        size_bytes = path.stat().st_size
         return size_bytes
     except Exception as e:
         logger.warning(f"Error getting size for {file_path}: {e}")
@@ -31,7 +33,8 @@ def get_file_size(file_path):
 def get_file_date(file_path):
     """Get file modification date"""
     try:
-        timestamp = os.path.getmtime(file_path)
+        path = Path(file_path)
+        timestamp = path.stat().st_mtime
         return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
     except Exception as e:
         logger.warning(f"Error getting date for {file_path}: {e}")

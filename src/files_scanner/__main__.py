@@ -1,12 +1,11 @@
 import csv
-import os
 import tkinter as tk
+from pathlib import Path
 from tkinter import filedialog, messagebox
 
 from loguru import logger
 
-from src.files_scanner.files import calculate_crc32, get_file_date, get_file_size
-from src.files_scanner.logger import configure_logger
+from src.utils import calculate_crc32, configure_logger, get_file_date, get_file_size
 
 
 def select_folder():
@@ -26,26 +25,29 @@ def scan_folder(folder_path, include_subfolders=True):
     logger.info(f"Starting scan in folder: {folder_path}")
     logger.info(f"Include subfolders: {include_subfolders}")
 
+    folder = Path(folder_path)
+    if not folder.exists():
+        logger.error(f"Folder does not exist: {folder_path}")
+        return files_data, total_files
+
     if include_subfolders:
-        # Scan with subfolders
-        for root, dirs, files in os.walk(folder_path):
-            for file in files:
-                file_path = os.path.join(root, file)
+        # Scan with subfolders using pathlib
+        for file_path in folder.rglob("*"):
+            if file_path.is_file():
                 files_data.append(process_file(file_path))
                 total_files += 1
-                logger.debug(f"Processed: {file}")
+                logger.debug(f"Processed: {file_path.name}")
 
                 # Логируем прогресс каждые 100 файлов
                 if total_files % 100 == 0:
                     logger.info(f"Processed {total_files} files...")
     else:
         # Scan only current folder
-        for item in os.listdir(folder_path):
-            item_path = os.path.join(folder_path, item)
-            if os.path.isfile(item_path):
-                files_data.append(process_file(item_path))
+        for item in folder.iterdir():
+            if item.is_file():
+                files_data.append(process_file(item))
                 total_files += 1
-                logger.debug(f"Processed: {item}")
+                logger.debug(f"Processed: {item.name}")
 
     logger.info(f"Scan completed. Total files: {total_files}")
     return files_data, total_files
@@ -74,7 +76,8 @@ def process_file(file_path):
 def save_to_csv(files_data, output_file):
     """Save data to CSV file"""
     try:
-        with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+        output_path = Path(output_file)
+        with output_path.open("w", newline="", encoding="utf-8") as csvfile:
             fieldnames = ["File", "Size", "CRC32", "LastModified"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
 

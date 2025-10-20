@@ -18,11 +18,12 @@ def calculate_crc32(file_path):
         return f"ERROR: {str(e)}"
 
 
-def get_file_size_kb(file_path):
-    """Get file size in KB"""
+def get_file_size(file_path):
+    """Get file size"""
     try:
         size_bytes = os.path.getsize(file_path)
-        return round(size_bytes / 1024, 2)
+        return size_bytes
+        # return round(size_bytes / 1024, 2)
     except:
         return 0
 
@@ -41,7 +42,7 @@ def select_folder():
     root = tk.Tk()
     root.withdraw()  # Hide the main window
 
-    folder_path = filedialog.askdirectory(title="Select folder to scan")
+    folder_path = filedialog.askdirectory(title="Выберите каталог для сканирования")
     return folder_path
 
 
@@ -74,7 +75,7 @@ def process_file(file_path):
     """Process individual file and return its data"""
     return {
         "path": file_path,
-        "size_kb": get_file_size_kb(file_path),
+        "size": get_file_size(file_path),
         "crc32": calculate_crc32(file_path),
         "modified": get_file_date(file_path),
     }
@@ -83,7 +84,7 @@ def process_file(file_path):
 def save_to_csv(files_data, output_file):
     """Save data to CSV file"""
     with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-        fieldnames = ["File", "Size_KB", "CRC32", "LastModified"]
+        fieldnames = ["File", "Size", "CRC32", "LastModified"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
 
         writer.writeheader()
@@ -91,7 +92,7 @@ def save_to_csv(files_data, output_file):
             writer.writerow(
                 {
                     "File": file_data["path"],
-                    "Size_KB": file_data["size_kb"],
+                    "Size": file_data["size"],
                     "CRC32": file_data["crc32"],
                     "LastModified": file_data["modified"],
                 }
@@ -110,11 +111,13 @@ def main():
     print(f"Selected folder: {folder_path}")
 
     # Ask for subfolders
-    include_subfolders = messagebox.askyesno("Subfolders", "Include subfolders?")
+    include_subfolders = messagebox.askyesno("Подкаталоги", "Включать в поиск подкаталоги?")
 
     # Ask for output file
     output_file = filedialog.asksaveasfilename(
-        title="Save results as CSV", defaultextension=".csv", filetypes=[("CSV files", "*.csv"), ("All files", "*.*")]
+        title="Сохранить результаты в CSV",
+        defaultextension=".csv",
+        filetypes=[("CSV файлы", "*.csv"), ("Все файлы", "*.*")],
     )
 
     if not output_file:

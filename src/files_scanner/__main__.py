@@ -1,40 +1,12 @@
+import csv
 import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
-import zlib
-import csv
-from datetime import datetime
 
+from loguru import logger
 
-def calculate_crc32(file_path):
-    """Calculate CRC32 checksum for a file"""
-    try:
-        prev = 0
-        with open(file_path, "rb") as f:
-            for line in f:
-                prev = zlib.crc32(line, prev)
-        return f"{prev & 0xFFFFFFFF:08X}"
-    except Exception as e:
-        return f"ERROR: {str(e)}"
-
-
-def get_file_size(file_path):
-    """Get file size"""
-    try:
-        size_bytes = os.path.getsize(file_path)
-        return size_bytes
-        # return round(size_bytes / 1024, 2)
-    except:
-        return 0
-
-
-def get_file_date(file_path):
-    """Get file modification date"""
-    try:
-        timestamp = os.path.getmtime(file_path)
-        return datetime.fromtimestamp(timestamp).strftime("%Y-%m-%d %H:%M:%S")
-    except:
-        return "Unknown"
+from src.files_scanner.files import calculate_crc32, get_file_date, get_file_size
+from src.files_scanner.logger import configure_logger
 
 
 def select_folder():
@@ -51,6 +23,9 @@ def scan_folder(folder_path, include_subfolders=True):
     files_data = []
     total_files = 0
 
+    logger.info(f"Starting scan in folder: {folder_path}")
+    logger.info(f"Include subfolders: {include_subfolders}")
+
     if include_subfolders:
         # Scan with subfolders
         for root, dirs, files in os.walk(folder_path):
@@ -58,7 +33,11 @@ def scan_folder(folder_path, include_subfolders=True):
                 file_path = os.path.join(root, file)
                 files_data.append(process_file(file_path))
                 total_files += 1
-                print(f"Processed: {file}")
+                logger.debug(f"Processed: {file}")
+
+                # Логируем прогресс каждые 100 файлов
+                if total_files % 100 == 0:
+                    logger.info(f"Processed {total_files} files...")
     else:
         # Scan only current folder
         for item in os.listdir(folder_path):
@@ -66,49 +45,66 @@ def scan_folder(folder_path, include_subfolders=True):
             if os.path.isfile(item_path):
                 files_data.append(process_file(item_path))
                 total_files += 1
-                print(f"Processed: {item}")
+                logger.debug(f"Processed: {item}")
 
+    logger.info(f"Scan completed. Total files: {total_files}")
     return files_data, total_files
 
 
 def process_file(file_path):
     """Process individual file and return its data"""
-    return {
-        "path": file_path,
-        "size": get_file_size(file_path),
-        "crc32": calculate_crc32(file_path),
-        "modified": get_file_date(file_path),
-    }
+    try:
+        file_data = {
+            "path": file_path,
+            "size": get_file_size(file_path),
+            "crc32": calculate_crc32(file_path),
+            "modified": get_file_date(file_path),
+        }
+        return file_data
+    except Exception as e:
+        logger.error(f"Error processing file {file_path}: {e}")
+        return {
+            "path": file_path,
+            "size": 0,
+            "crc32": "ERROR",
+            "modified": "Unknown",
+        }
 
 
 def save_to_csv(files_data, output_file):
     """Save data to CSV file"""
-    with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
-        fieldnames = ["File", "Size", "CRC32", "LastModified"]
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
+    try:
+        with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
+            fieldnames = ["File", "Size", "CRC32", "LastModified"]
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
 
-        writer.writeheader()
-        for file_data in files_data:
-            writer.writerow(
-                {
-                    "File": file_data["path"],
-                    "Size": file_data["size"],
-                    "CRC32": file_data["crc32"],
-                    "LastModified": file_data["modified"],
-                }
-            )
+            writer.writeheader()
+            for file_data in files_data:
+                writer.writerow(
+                    {
+                        "File": file_data["path"],
+                        "Size": file_data["size"],
+                        "CRC32": file_data["crc32"],
+                        "LastModified": file_data["modified"],
+                    }
+                )
+        logger.success(f"Results successfully saved to: {output_file}")
+        return True
+    except Exception as e:
+        logger.error(f"Error saving to CSV {output_file}: {e}")
+        return False
 
 
 def main():
-    print("=== File Scanner with CRC32 ===")
+    logger.info("=== File Scanner with CRC32 ===")
 
     # Select folder
     folder_path = select_folder()
     if not folder_path:
-        print("No folder selected. Exiting.")
+        logger.warning("No folder selected. Exiting.")
         return
 
-    print(f"Selected folder: {folder_path}")
+    logger.info(f"Selected folder: {folder_path}")
 
     # Ask for subfolders
     include_subfolders = messagebox.askyesno("Подкаталоги", "Включать в поиск подкаталоги?")
@@ -121,25 +117,30 @@ def main():
     )
 
     if not output_file:
-        print("No output file selected. Exiting.")
+        logger.warning("No output file selected. Exiting.")
         return
 
     # Scan files
-    print("Scanning files...")
+    logger.info("Scanning files...")
     files_data, total_files = scan_folder(folder_path, include_subfolders)
 
     # Save results
-    print("Saving results...")
-    save_to_csv(files_data, output_file)
+    logger.info("Saving results...")
+    success = save_to_csv(files_data, output_file)
 
     # Show summary
-    messagebox.showinfo(
-        "Complete", f"Scanning complete!\n" f"Files processed: {total_files}\n" f"Results saved to: {output_file}"
-    )
-
-    print(f"\nComplete! Processed {total_files} files.")
-    print(f"Results saved to: {output_file}")
+    if success:
+        messagebox.showinfo(
+            "Завершено",
+            f"Сканирование завершено!\n" f"Обработано файлов: {total_files}\n" f"Результаты сохранены в: {output_file}",
+        )
+        logger.success(f"Complete! Processed {total_files} files.")
+        logger.success(f"Results saved to: {output_file}")
+    else:
+        messagebox.showerror("Ошибка", "Произошла ошибка при сохранении!\n" "Проверьте лог-файл для деталей.")
+        logger.error("Failed to save results!")
 
 
 if __name__ == "__main__":
+    configure_logger()
     main()

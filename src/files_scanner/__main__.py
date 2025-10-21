@@ -77,7 +77,7 @@ def save_to_csv(files_data, output_file):
     """Save data to CSV file"""
     try:
         output_path = Path(output_file)
-        with output_path.open("w", newline="", encoding="utf-8") as csvfile:
+        with output_path.open("w", newline="", encoding="utf-8-sig") as csvfile:
             fieldnames = ["File", "Size", "CRC32", "LastModified"]
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames, delimiter=";")
 
@@ -110,7 +110,15 @@ def main():
     logger.info(f"Selected folder: {folder_path}")
 
     # Ask for subfolders
-    include_subfolders = messagebox.askyesno("Подкаталоги", "Включать в поиск подкаталоги?")
+    folder = Path(folder_path)
+    is_subfolders = False
+    for file_path in folder.rglob("*"):
+        if file_path.is_dir():
+            is_subfolders = True
+            break
+    include_subfolders = (
+        is_subfolders if not is_subfolders else messagebox.askyesno("Подкаталоги", "Включать в поиск подкаталоги?")
+    )
 
     # Ask for output file
     output_file = filedialog.asksaveasfilename(

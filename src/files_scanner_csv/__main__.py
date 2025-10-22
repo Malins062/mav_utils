@@ -1,13 +1,12 @@
+import argparse
 import csv
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox
-import sys
-import argparse
 
 from loguru import logger
 
-from src.utils import calculate_crc32, configure_logger, get_file_date, get_file_size
+from src.utils import calculate_crc32, configure_logger, get_file_size
 
 # Константа для имени выходного файла
 DEFAULT_OUTPUT_FILENAME = "scan_results.csv"
@@ -84,14 +83,16 @@ def scan_folder(folder_path, include_subfolders=True):
         # Use folder from PSD if available, otherwise from TIF
         folder_name = psd_data["folder"] if psd_data else tif_data["folder"]
 
-        files_data.append({
-            "folder_name": folder_name,
-            "filename": filename,
-            "psd_size": psd_data["size"] if psd_data else 0,
-            "psd_crc32": psd_data["crc32"] if psd_data else "",
-            "tif_size": tif_data["size"] if tif_data else 0,
-            "tif_crc32": tif_data["crc32"] if tif_data else "",
-        })
+        files_data.append(
+            {
+                "folder_name": folder_name,
+                "filename": filename,
+                "psd_size": psd_data["size"] if psd_data else 0,
+                "psd_crc32": psd_data["crc32"] if psd_data else "",
+                "tif_size": tif_data["size"] if tif_data else 0,
+                "tif_crc32": tif_data["crc32"] if tif_data else "",
+            }
+        )
 
     logger.info(f"Scan completed. Total files processed: {total_files}")
     logger.info(f"Matched file pairs: {len(files_data)}")
@@ -105,35 +106,53 @@ def save_to_csv(files_data, output_file):
         with output_path.open("w", newline="", encoding="utf-8-sig") as csvfile:
             # Write header according to template
             writer = csv.writer(csvfile, delimiter=";")
-            writer.writerow([
-                "№", "Машина", "Примечание", "Примечание 2", "Ефимов", "ДСЕ",
-                "ДСЕ имя", "Дата", "Номер диска", "Размер PSD", "На диске PSD",
-                "CRC32 PSD", "Размер TIF", "На диске TIF", "CRC32 TIF",
-                "Занято на CD", "да", ""
-            ])
+            writer.writerow(
+                [
+                    "№",
+                    "Машина",
+                    "Примечание",
+                    "Примечание 2",
+                    "Ефимов",
+                    "ДСЕ",
+                    "ДСЕ имя",
+                    "Дата",
+                    "Номер диска",
+                    "Размер PSD",
+                    "На диске PSD",
+                    "CRC32 PSD",
+                    "Размер TIF",
+                    "На диске TIF",
+                    "CRC32 TIF",
+                    "Занято на CD",
+                    "да",
+                    "",
+                ]
+            )
 
             # Write data rows
             for i, file_data in enumerate(files_data, 1):
-                writer.writerow([
-                    i,  # №
-                    "",  # Машина
-                    "",  # Примечание
-                    file_data["folder_name"],  # Примечание 2 / Имя папки
-                    "",  # Ефимов
-                    file_data["filename"],  # ДСЕ / Имя файла
-                    "",  # ДСЕ имя
-                    "",  # Дата
-                    "",  # Номер диска
-                    file_data["psd_size"],  # Размер PSD
-                    "",  # На диске PSD
-                    file_data["psd_crc32"],  # CRC32 PSD
-                    file_data["tif_size"],  # Размер TIF
-                    "",  # На диске TIF
-                    file_data["tif_crc32"],  # CRC32 TIF
-                    "",  # Занято на CD
-                    "",  # да
-                    ""  # Empty column
-                ])
+                writer.writerow(
+                    [
+                        i,  # №
+                        "",  # Машина
+                        "",  # Примечание
+                        file_data["folder_name"],  # Примечание 2 / Имя папки
+                        "",  # Ефимов
+                        file_data["filename"],  # ДСЕ / Имя файла
+                        "",  # ДСЕ имя
+                        "",  # Дата
+                        "",  # Номер диска
+                        file_data["psd_size"],  # Размер PSD
+                        "",  # На диске PSD
+                        file_data["psd_crc32"],  # CRC32 PSD
+                        file_data["tif_size"],  # Размер TIF
+                        "",  # На диске TIF
+                        file_data["tif_crc32"],  # CRC32 TIF
+                        "",  # Занято на CD
+                        "",  # да
+                        "",  # Empty column
+                    ]
+                )
 
         logger.success(f"Results successfully saved to: {output_file}")
         return True
@@ -144,10 +163,13 @@ def save_to_csv(files_data, output_file):
 
 def get_output_filename():
     """Get output filename from command line arguments or use default"""
-    parser = argparse.ArgumentParser(description='PSD/TIF File Scanner')
-    parser.add_argument('--output', '-o',
-                        default=DEFAULT_OUTPUT_FILENAME,
-                        help=f'Output CSV filename (default: {DEFAULT_OUTPUT_FILENAME})')
+    parser = argparse.ArgumentParser(description="PSD/TIF File Scanner")
+    parser.add_argument(
+        "--output",
+        "-o",
+        default=DEFAULT_OUTPUT_FILENAME,
+        help=f"Output CSV filename (default: {DEFAULT_OUTPUT_FILENAME})",
+    )
 
     # Parse only known arguments to avoid conflicts with tkinter
     args, _ = parser.parse_known_args()
@@ -156,10 +178,10 @@ def get_output_filename():
 
     # If no extension provided, add .csv
     if not output_file.suffix:
-        output_file = output_file.with_suffix('.csv')
+        output_file = output_file.with_suffix(".csv")
 
     # If no directory provided, use current directory
-    if not output_file.parent or str(output_file.parent) == '.':
+    if not output_file.parent or str(output_file.parent) == ".":
         output_file = Path.cwd() / output_file.name
 
     return str(output_file)
@@ -209,10 +231,7 @@ def main():
         logger.success(f"Matched {len(files_data)} file pairs.")
         logger.success(f"Results saved to: {output_file}")
     else:
-        messagebox.showerror(
-            "Ошибка",
-            "Произошла ошибка при сохранении!\nПроверьте лог-файл для деталей."
-        )
+        messagebox.showerror("Ошибка", "Произошла ошибка при сохранении!\nПроверьте лог-файл для деталей.")
         logger.error("Failed to save results!")
 
 

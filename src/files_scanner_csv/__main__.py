@@ -99,6 +99,14 @@ def scan_folder(folder_path, include_subfolders=True):
     return files_data, total_files
 
 
+def format_crc32_for_excel(crc32_value):
+    """Format CRC32 value to prevent Excel from converting it to scientific notation"""
+    if crc32_value and crc32_value.strip():
+        # Добавляем табуляцию перед значением, чтобы Excel воспринимал его как текст
+        return f"\t{crc32_value}"
+    return crc32_value
+
+
 def save_to_csv(files_data, output_file):
     """Save data to CSV file according to template"""
     try:
@@ -131,6 +139,10 @@ def save_to_csv(files_data, output_file):
 
             # Write data rows
             for i, file_data in enumerate(files_data, 1):
+                # Форматируем CRC32 значения для корректного отображения в Excel
+                psd_crc32 = format_crc32_for_excel(file_data["psd_crc32"])
+                tif_crc32 = format_crc32_for_excel(file_data["tif_crc32"])
+
                 writer.writerow(
                     [
                         i,  # №
@@ -144,10 +156,10 @@ def save_to_csv(files_data, output_file):
                         "",  # Номер диска
                         file_data["psd_size"],  # Размер PSD
                         "",  # На диске PSD
-                        file_data["psd_crc32"],  # CRC32 PSD
+                        psd_crc32,  # CRC32 PSD
                         file_data["tif_size"],  # Размер TIF
                         "",  # На диске TIF
-                        file_data["tif_crc32"],  # CRC32 TIF
+                        tif_crc32,  # CRC32 TIF
                         "",  # Занято на CD
                         "",  # да
                         "",  # Empty column

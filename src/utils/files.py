@@ -39,3 +39,11 @@ def get_file_date(file_path):
     except Exception as e:
         logger.warning(f"Error getting date for {file_path}: {e}")
         return "Unknown"
+
+
+def get_filename_without_extension(filepath: str) -> str:
+    """
+    Возвращает имя файла без расширения
+    """
+    return Path(filepath).stem
+

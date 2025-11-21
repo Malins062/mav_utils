@@ -1,11 +1,7 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
-from PIL import Image, ImageDraw, ImageFont
-import os
 import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
-import math
+from pathlib import Path
+from tkinter import filedialog
+from typing import List
 
 
 class FileSelector:
@@ -19,10 +15,7 @@ class FileSelector:
 
         file_paths = filedialog.askopenfilenames(
             title="Выберите изображения",
-            filetypes=[
-                ("Изображения", "*.jpg *.jpeg *.png *.bmp *.tiff *.tif"),
-                ("Все файлы", "*.*")
-            ]
+            filetypes=[("Изображения", "*.jpg *.jpeg *.png *.bmp *.tiff *.tif"), ("Все файлы", "*.*")],
         )
         root.destroy()
 
@@ -41,11 +34,12 @@ class FileSelector:
             return []
 
         # Поддерживаемые форматы изображений
-        supported_formats = ('.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif')
+        supported_formats = (".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif")
         image_files = []
+        directory_path = Path(directory)
 
-        for file in os.listdir(directory):
-            if file.lower().endswith(supported_formats):
-                image_files.append(os.path.join(directory, file))
+        for file in directory_path.iterdir():
+            if file.is_file() and file.name.lower().endswith(supported_formats):
+                image_files.append(str(file))
 
         return sorted(image_files)

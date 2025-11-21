@@ -46,4 +46,3 @@ def get_filename_without_extension(filepath: str) -> str:
     Возвращает имя файла без расширения
     """
     return Path(filepath).stem
-

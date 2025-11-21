@@ -1,8 +1,10 @@
+from src.print_scale_images.config import LoggerConfig
 from src.print_scale_images.handlers.main_controller import MainController
+from src.utils import configure_logger
 
 
 def main():
-    """Точка входа в приложение"""
+    configure_logger(file_name=LoggerConfig.filename, console=LoggerConfig.console)
     app = MainController()
     app.run()
 

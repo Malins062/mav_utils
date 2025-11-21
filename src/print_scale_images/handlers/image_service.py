@@ -1,26 +1,24 @@
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from typing import List, Optional, Tuple
-from PIL import Image, ImageDraw, ImageFont
-import os
-import tkinter as tk
-from tkinter import filedialog, messagebox, ttk
-import math
+from typing import List
+
+from loguru import logger
+from PIL import Image
+
+from src.print_scale_images.config import ImageConfig, ImageInfo
+from src.print_scale_images.handlers.caption_builder import CaptionBuilder
+from src.print_scale_images.handlers.image_processor import A4ImageProcessor
 
 
-
-
-class PrintService:
+class ImageProcessingService:
     """Сервис для управления процессом печати"""
 
     def __init__(self):
-        self.image_processor = A4PrintProcessor()
+        self.image_processor = A4ImageProcessor()
         self.caption_builder = CaptionBuilder()
-        self.pdf_exporter = PDFExporter()
-        self.config = PrintConfig()
+        self.config = ImageConfig()
 
     def process_images(self, image_paths: List[str]) -> List[ImageInfo]:
         """Обрабатывает список изображений"""
+
         processed_images = []
 
         for image_path in image_paths:
@@ -32,21 +30,13 @@ class PrintService:
 
                     # Добавляем подпись
                     image_info.a4_image = self.caption_builder.add_caption(
-                        image_info.a4_image,
-                        image_path,
-                        image_info.scale_ratio,
-                        self.config
+                        image_info.a4_image, image_path, image_info.scale_ratio, self.config
                     )
 
                     processed_images.append(image_info)
 
             except Exception as e:
-                print(f"Ошибка обработки {image_path}: {e}")
+                logger.error(f"Ошибка обработки {image_path}: {e}")
                 continue
 
         return processed_images
-
-    def export_to_pdf(self, image_infos: List[ImageInfo], output_path: str) -> str:
-        """Экспортирует обработанные изображения в PDF"""
-        images = [info.a4_image for info in image_infos]
-        return self.pdf_exporter.export(images, output_path)

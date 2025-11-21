@@ -1,10 +1,8 @@
-import math
 from abc import ABC, abstractmethod
 
 from PIL import Image
 
 from src.print_scale_images.config import ImageConfig, ImageInfo
-from src.print_scale_images.handlers.scale_calculator import ScaleCalculator
 
 
 class ImageProcessor(ABC):
@@ -21,7 +19,6 @@ class A4ImageProcessor(ImageProcessor):
     def __init__(self):
         # A4 в альбомной ориентации 300 DPI: 297mm x 210mm
         self.a4_size_landscape = (3508, 2480)  # высота x ширина
-        self.scale_calculator = ScaleCalculator()
 
     def process(self, image: Image.Image, config: ImageConfig) -> ImageInfo:
         """Обрабатывает изображение для изменения размеров на A4"""
@@ -56,12 +53,32 @@ class A4ImageProcessor(ImageProcessor):
             scale_ratio = (1, 1)
             new_size = image.size
         else:
-            # Находим ближайший меньший целочисленный масштаб (1/n) от 1:2 до 1:20
-            scale_denominator = max(2, math.ceil(1.0 / scale))
-            # Ограничиваем максимальный масштаб 1:20 (5%)
-            scale_denominator = min(scale_denominator, 20)
-            scale = 1.0 / scale_denominator
-            scale_ratio = (scale_denominator, 1)
+            # Находим ближайший меньший масштаб из допустимых: 1:1, 1:2, 1:2.5, 1:4, 1:5
+            allowed_scales = [1.0, 0.5, 0.4, 0.25, 0.2]  # 1:1, 1:2, 1:2.5, 1:4, 1:5
+            scale_ratio = (1, 1)
+
+            # Ищем наибольший допустимый масштаб, который <= вычисленного
+            for allowed_scale in allowed_scales:
+                if allowed_scale <= scale:
+                    new_scale = allowed_scale
+                    break
+            else:
+                # Если ни один не подошел, берем самый маленький
+                new_scale = allowed_scales[-1]
+
+            # Преобразуем масштаб в ratio для подписи
+            if new_scale == 1.0:
+                scale_ratio = (1, 1)
+            elif new_scale == 0.5:
+                scale_ratio = (2, 1)
+            elif new_scale == 0.4:
+                scale_ratio = (5, 2)  # 1:2.5
+            elif new_scale == 0.25:
+                scale_ratio = (4, 1)
+            elif new_scale == 0.2:
+                scale_ratio = (5, 1)
+
+            scale = new_scale
             new_size = (int(image.width * scale), int(image.height * scale))
 
         # Масштабируем изображение

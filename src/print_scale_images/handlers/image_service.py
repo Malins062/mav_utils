@@ -3,7 +3,7 @@ from typing import List
 from loguru import logger
 from PIL import Image
 
-from src.print_scale_images.config import ImageConfig, ImageInfo
+from src.print_scale_images.config import ImageInfo, app_config
 from src.print_scale_images.handlers.caption_builder import CaptionBuilder
 from src.print_scale_images.handlers.image_processor import A4ImageProcessor
 
@@ -14,7 +14,7 @@ class ImageProcessingService:
     def __init__(self):
         self.image_processor = A4ImageProcessor()
         self.caption_builder = CaptionBuilder()
-        self.config = ImageConfig()
+        self.config = app_config.image_config
 
     def process_images(self, image_paths: List[str]) -> List[ImageInfo]:
         """Обрабатывает список изображений"""

@@ -1,0 +1,9 @@
+{
+    "dpi": 300,
+    "margin": 100,
+    "font_size": 90,
+    "font_style": "arial.ttf",
+    "text_margin": 180,
+    "filename": "processing.log",
+    "console": false
+}

@@ -118,6 +118,7 @@ class MainController:
         """Печатает обработанные изображения"""
 
         try:
+            # success = self.printer_service.print_images_with_dialog(processed_images)
             success = self.printer_service.print_images(processed_images)
             if success:
                 messagebox.showinfo("Печать", "Изображения отправлены на печать!")

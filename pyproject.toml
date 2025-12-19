@@ -11,6 +11,7 @@ python = ">=3.10,<3.11"
 pyinstaller = "^6.16.0"
 loguru = "^0.7.3"
 pillow = "^12.0.0"
+pywin32 = "^311"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.4.2"
